@@ -1,7 +1,6 @@
 CFLAGS=-std=c17 -g -fno-common -Wextra -Wpedantic
-# -lglut -lm -- if default libs is not enough
 LFLAGS=-lGL -lXext -lX11 -lm
-HEADER_FILES = src/cmath.h src/la.h src/config.h src/navigation.h
+HEADER_FILES = src/la.h src/config.h src/navigation.h
 SRC_FILES = src/la.c src/config.c src/navigation.c src/main.c
 
 boomer-arch: 
