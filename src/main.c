@@ -8,8 +8,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include "config.h"
+#include "la.h"
+#include "navigation.h"
 
-#define WINDOW_WIDTH 800
+#define WINDOW_WIDTH	800
 #define WINDOW_HEIGHT 600
 
 typedef struct
@@ -112,10 +114,72 @@ int main(void)
 
 	printf("Loading config...\n");
 
-	config conf = config_load("config.txt");
+	config_t conf = config_load("config.txt");
 
 	config_print(conf, "config.txt");
 
+
+
+
+	// Testing navigation
+
+	mouse_t mouse = 
+	{
+		.curr = vec2(10.06, 196.0),
+		.prev = vec2(10.05, 195.0),
+		.drag = false,
+	};
+
+	printf("Data of mouse structure:\n"
+			" curr = x: %.2f, y: %.2f\n"
+			" prev = x: %.2f, y: %.2f\n"
+			" drag = %s\n",
+			mouse.curr.x, mouse.curr.y, mouse.prev.x, mouse.prev.y, mouse.drag ? "true\n" : "false\n");
+
+	camera_t camera = 
+	{ 
+		.position = vec2(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0),
+		.velocity = vec2(105.0, 15.0),
+		.scale_pivot = vec2(100.0, 600.0),
+		.scale = 4.0,
+		.delta_scale = 1.5,
+	};
+
+	printf("Data of camera structure:\n"
+		" position    = x: %.2f, y: %.2f\n"
+		" velocity    = x: %.2f, y: %.2f\n"
+		" scale_pivot = x: %.2f, y: %.2f\n"
+		" scale       = %.2f\n"
+		" delta_scale = %.2f\n",
+		camera.position.x, camera.position.y,
+		camera.velocity.x, camera.velocity.y,
+		camera.scale_pivot.x, camera.scale_pivot.y,
+		camera.scale, camera.delta_scale);
+
+	printf("v = x: 256.0, y: 256.0\n");
+
+	vec2f wrld = world(camera, vec2(256.0, 256.0));
+
+	printf("world:\n"
+			" x: %.2f\n"
+			" y: %.2f\n", wrld.x, wrld.y);
+
+	printf("Updating camera...\n");
+
+
+	camera_update(&camera, conf, 0.9, mouse, vec2(WINDOW_WIDTH, WINDOW_HEIGHT));
+	printf("Data of updated camera structure:\n"
+		" position    = x: %.2f, y: %.2f\n"
+		" velocity    = x: %.2f, y: %.2f\n"
+		" scale_pivot = x: %.2f, y: %.2f\n"
+		" scale       = %.2f\n"
+		" delta_scale = %.2f\n",
+		camera.position.x, camera.position.y,
+		camera.velocity.x, camera.velocity.y,
+		camera.scale_pivot.x, camera.scale_pivot.y,
+		camera.scale, camera.delta_scale);
+
+	
 	//while (app->running == 1) 
 	//	handle_app_event(app, msg);
 		

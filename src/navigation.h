@@ -25,6 +25,6 @@ typedef struct
 
 vec2f world(camera_t camera, vec2f v);
 // In original code here is the PXImage, but it dont even used in proc block. So I removed it.
-void update(camera_t camera, config_t config, float dt, mouse_t mouse, vec2f window_size);
+void camera_update(camera_t *camera, config_t config, float dt, mouse_t mouse, vec2f window_size);
 
 #endif // NAVIGATION_H

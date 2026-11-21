@@ -1,10 +1,11 @@
 CFLAGS=-std=c17 -g -fno-common -Wextra -Wpedantic
 # -lglut -lm -- if default libs is not enough
-LFLAGS=-lGL -lXext -lX11 
-SRC_FILES = src/main.c src/config.c src/config.h # src/la.c src/main.c src/navigation.c src/screenshot.c
+LFLAGS=-lGL -lXext -lX11 -lm
+HEADER_FILES = src/cmath.h src/la.h src/config.h src/navigation.h
+SRC_FILES = src/la.c src/config.c src/navigation.c src/main.c
 
 boomer-arch: 
-	gcc -o boomer-arch $(SRC_FILES) $(LFLAGS)
+	gcc -o boomer-arch $(HEADER_FILES) $(SRC_FILES) $(LFLAGS)
 
 
 install:

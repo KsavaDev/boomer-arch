@@ -9,12 +9,11 @@ typedef struct
 	float scale_friction;
 } config_t;
 
-typedef config_t config;
 
-extern config default_config; 
+extern config_t default_config; 
 
-config config_load(const char *filepath);
+config_t config_load(const char *filepath);
 void config_generate_default(const char *filepath);
-void config_print(config conf, const char *filename);
+void config_print(config_t conf, const char *filename);
 
 #endif // CONFIG_H

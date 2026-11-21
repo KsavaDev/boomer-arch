@@ -1,6 +1,6 @@
 // Linear Algebra
 #include "la.h"
-#include <math.h>
+#include "math.h"
 
 vec2f vec2(float x, float y)
 {
@@ -40,16 +40,16 @@ vec2f vec2f_add(vec2f a, vec2f b)
 	return vec2(a.x + b.x, a.y + b.y);
 }
 
-void vec2f_sub_assign(vec2f cur, vec2f b)
+void vec2f_sub_assign(vec2f *cur, vec2f b)
 {
-	cur.x -= b.x;
-	cur.y -= b.y;
+	cur->x -= b.x;
+	cur->y -= b.y;
 }
 
-void vec2f_add_assign(vec2f cur, vec2f b)
+void vec2f_add_assign(vec2f *cur, vec2f b)
 {
-	cur.x += b.x;
-	cur.y += b.y;
+	cur->x += b.x;
+	cur->y += b.y;
 }
 
 float vec2f_length(vec2f a)
