@@ -1,4 +1,4 @@
-This is a port of boomer application that made by Tsoding to arch linux.
+This is a version of the boomer applcation, originally created by Tsoding, rewritten in C.
 
 # Dependecies
 
