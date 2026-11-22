@@ -49,9 +49,9 @@ App *create_app(int width, int height)
 	if (glXQueryVersion(app->display, maj, min))
 	{
 		if ((*maj == 1 && *min <3) || (*maj < 1))
-		{
-			fprintf(stderr, "Invalid GLX version. Required >=1.3\n");
-		}
+    {
+      fprintf(stderr, "Invalid GLX version. Required >=1.3\n");
+    }
 		printf("GLX Version: %d.%d\n", *maj, *min);
 	}
 
@@ -85,10 +85,14 @@ void handle_app_event(App *app, char *msg)
 	{
 		KeySym key = XLookupKeysym(&app->event.xkey, 0);
 		if (key != 0) // I dont know why in tutorial used a NULL if KeySym is just unsigned long.
-			printf("Keyboard event.\n");
-	}
+    {
+      printf("Keyboard event.\n");
+    }
+  }
 	if (app->event.type == ButtonPressMask || app->event.type == PointerMotionMask)
-		printf("Mouse event.\n");
+  {
+    printf("Mouse event.\n");
+  }
 }
 
 void close_app(App *app)
