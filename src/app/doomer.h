@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <X11/Xlib.h>
 #include <GL/gl.h>
-#include "la.h"
+#include "../util/la.h"
 #include "navigation.h"
 
 typedef struct

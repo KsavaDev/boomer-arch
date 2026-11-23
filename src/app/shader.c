@@ -1,7 +1,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include "shader.h"
 #include <GL/glext.h>
-#include "file_io.h"
+#include "../util/file_io.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -15,12 +15,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "config.h"
-#include "la.h"
-#include "navigation.h"
-#include "doomer.h"
-#include "shader.h"
-#include "screenshot.h"
+#include "app/config.h"
+#include "util/la.h"
+#include "app/navigation.h"
+#include "app/doomer.h"
+#include "app/shader.h"
+#include "app/screenshot.h"
 
 static void scroll_up(XEvent event, Flashlight *flashlight, Camera *camera, Config config, Mouse mouse)
 {
@@ -196,8 +196,8 @@ int main(void)
   glXMakeCurrent(display, window, context);
 
   printf("Reading shader files.\n");
-  Shader *vertex_shader = shader_read("src/vert.glsl");
-  Shader *fragment_shader = shader_read("src/frag.glsl");
+  Shader *vertex_shader = shader_read("src/shaders/vert.glsl");
+  Shader *fragment_shader = shader_read("src/shaders/frag.glsl");
   printf("Done reading shader files.\n");
 
   printf("Content of vertex_shader:\n");

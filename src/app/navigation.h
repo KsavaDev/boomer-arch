@@ -2,7 +2,7 @@
 #define NAVIGATION_H
 
 #include "config.h"
-#include "la.h"
+#include "../util/la.h"
 #include <stdbool.h>
 
 #define VELOCITY_THRESHOLD 15.0

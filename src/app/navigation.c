@@ -1,6 +1,6 @@
 #include "navigation.h"
 #include "config.h"
-#include "la.h"
+#include "../util/la.h"
 #include <X11/Xlib.h>
 #include "math.h"
 
