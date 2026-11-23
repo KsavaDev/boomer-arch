@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #define GL_GLEXT_PROTOTYPES
-#include "boomer_arch.h"
+#include "doomer.h"
 #include "navigation.h"
 #include <GL/gl.h>
 #include <GL/glext.h>

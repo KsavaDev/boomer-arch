@@ -18,7 +18,7 @@
 #include "config.h"
 #include "la.h"
 #include "navigation.h"
-#include "boomer_arch.h"
+#include "doomer.h"
 #include "shader.h"
 #include "screenshot.h"
 
@@ -176,8 +176,8 @@ int main(void)
   printf("Mapping Window.\n");
   XMapWindow(display, window);
 
-  char *name = "boomer-arch";
-  char *class = "boomer-arch";
+  char *name = "doomer";
+  char *class = "doomer";
 
   printf("Creating XClassHint and setting it.\n");
   XClassHint hints = {.res_name = name, .res_class = class};
