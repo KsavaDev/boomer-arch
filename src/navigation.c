@@ -4,12 +4,12 @@
 #include <X11/Xlib.h>
 #include "math.h"
 
-vec2f world(camera_t camera, vec2f v)
+vec2f world(Camera camera, vec2f v)
 {
 	return vec2f_div_scalar(v, camera.scale);
 }
 
-void camera_update(camera_t *camera, config_t config, float dt, mouse_t mouse, vec2f window_size)
+void camera_update(Camera *camera, Config config, float dt, Mouse mouse, vec2f window_size)
 {
 	if (fabs(camera->delta_scale) > 0.5)
 	{

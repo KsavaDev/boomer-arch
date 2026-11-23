@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-config_t default_config = 
+Config default_config = 
 {
 	.min_scale = 0.01,
 	.scroll_speed = 1.5,
@@ -11,9 +11,9 @@ config_t default_config =
 	.scale_friction = 4.0,
 };
 
-config_t config_load(const char *filepath)
+Config config_load(const char *filepath)
 {
-	config_t result = default_config;
+	Config result = default_config;
 
 	FILE *fp = fopen(filepath, "r");
 	char buf[256];
@@ -71,7 +71,7 @@ void config_generate_default(const char *filepath)
 	fclose(f);
 }
 
-void config_print(config_t conf, const char *filename)
+void config_print(Config conf, const char *filename)
 {
 	printf("Contents of file %s are:\n  min_scale = %0.2f\n  scroll_speed = %0.2f\n  drag_friction = %0.2f\n  scale_friction = %0.2f\n", filename, conf.min_scale, conf.scroll_speed, conf.drag_friction, conf.scale_friction);
 }

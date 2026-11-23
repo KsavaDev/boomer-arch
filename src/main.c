@@ -1,8 +1,16 @@
+#define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #include <GL/glx.h>
+#include <GL/glext.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/keysym.h>
+#include <X11/cursorfont.h>
+#include <X11/extensions/Xrandr.h>
+#include <linux/limits.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -10,43 +18,102 @@
 #include "config.h"
 #include "la.h"
 #include "navigation.h"
+#include "boomer_arch.h"
+#include "shader.h"
+#include "screenshot.h"
 
-#define WINDOW_WIDTH	800
-#define WINDOW_HEIGHT 600
-
-typedef struct
+static void scroll_up(XEvent event, Flashlight *flashlight, Camera *camera, Config config, Mouse mouse)
 {
-	Display *display;
-	Window rootWindow;
-	Window window;
-	XEvent event;
-	int screen;
-	bool running;
-} App;
+  printf("Scrolling up.\n");
+  if ((event.xkey.state & ControlMask) > 0 && flashlight->is_enabled)
+  {
+    printf("changing flashlight delta_radius.\n");
+    flashlight->delta_radius += INITIAL_FL_DELTA_RADIUS;
+  }
+  else 
+  {
+    printf("changing camera delta_scale and scale_pivot.\n");
+    camera->delta_scale += config.scroll_speed;
+    camera->scale_pivot = mouse.curr;
+  }
+  printf("Done scrolling up.\n");
+}
 
-App *create_app(int width, int height)
+static void scroll_down(XEvent event, Flashlight *flashlight, Camera *camera, Config config, Mouse mouse)
 {
-	App *app = NULL;
-	app = calloc(1, sizeof(App));
-	if (app == NULL)
-	{
-		fprintf(stderr, "Allocating App struct failed.");
-		exit(1);
-	}
+  if ((event.xkey.state & ControlMask) > 0 && flashlight->is_enabled)
+  {
+    flashlight->delta_radius -= INITIAL_FL_DELTA_RADIUS;
+  }
+  else 
+  {
+    camera->delta_scale -= config.scroll_speed;
+    camera->scale_pivot = mouse.curr;
+  }
+}
 
-	app->display = XOpenDisplay(NULL);
-	if (app->display == NULL)
-	{
-		fprintf(stderr, "Cannot open display\n");
-		exit(1);
-	}
-	app->screen = DefaultScreen(app->display);
-	
-	// I dont know if its a good idea do this, but at the end of this method I freed this variables and it works.
-	int *maj = malloc(sizeof(int));
-	int *min = malloc(sizeof(int));
+int main(void)
+{
+  char boomer_dir[PATH_MAX];
 
-	if (glXQueryVersion(app->display, maj, min))
+  if (getcwd(boomer_dir, sizeof(boomer_dir)) != NULL)
+  {
+    printf("Current directory: %s\n", boomer_dir);
+  }
+  else 
+  {
+    perror("getcwd() error");
+    exit(1);
+  }
+
+  char *src_dir = strcat(boomer_dir, "/src");
+
+  printf("src dir: %s\n", src_dir);
+
+  char *config_file = "config.txt";
+
+  bool windowed = false;
+  float delay_sec = 0.0;
+
+  // TODO: implement application arguments
+  
+  Config def_conf = default_config;
+
+  if (access(config_file, F_OK) == 0)
+  {
+    def_conf = config_load(config_file);
+  }
+  else
+  {
+    printf("%s doesn't exist. Using default values.\n", config_file);
+  }
+
+  printf("Using config: \n");
+  config_print(def_conf, "default_config");
+
+  Display *display = XOpenDisplay(NULL);
+  if (display == NULL)
+  {
+    fprintf(stderr, "Failed to open display\n");
+    exit(1);
+  }
+
+  XSetErrorHandler(X11_error_handler);
+
+  // TODO: implement switching tracking_window by select.
+  Window tracking_window = DefaultRootWindow(display);
+
+  XRRScreenConfiguration *screen_config = XRRGetScreenInfo(display, DefaultRootWindow(display));
+
+  short rate = XRRConfigCurrentRate(screen_config);
+  printf("Screen rate: %d\n", rate);
+
+  int screen = XDefaultScreen(display);
+  
+  int *maj = malloc(sizeof(int));
+  int *min = malloc(sizeof(int));
+
+	if (glXQueryVersion(display, maj, min))
 	{
 		if ((*maj == 1 && *min <3) || (*maj < 1))
     {
@@ -55,138 +122,354 @@ App *create_app(int width, int height)
 		printf("GLX Version: %d.%d\n", *maj, *min);
 	}
 
-	printf("%s\n", glXQueryExtensionsString(app->display, app->screen));
+	printf("%s\n", glXQueryExtensionsString(display, screen));
 
-	free(maj);
-	free(min);
-	
-	app->rootWindow = RootWindow(app->display, app->screen);
-	app->window = XCreateSimpleWindow(app->display, app->rootWindow, 10, 10, width, height, 1, BlackPixel(app->display, app->screen), WhitePixel(app->display, app->screen));
-	XSelectInput(app->display, app->window, ExposureMask | KeyPressMask | ButtonPressMask | PointerMotionMask);
-	XMapWindow(app->display, app->window);
-	app->running = true;
-	return app;
-}
+  free(maj);
+  free(min);
 
-void draw_string(App *app, int x, int y, char *msg)
-{
-	XDrawString(app->display, app->window, DefaultGC(app->display, app->screen), x, y, msg, strlen(msg));
-}
-
-void handle_app_event(App *app, char *msg)
-{
-	XNextEvent(app->display, &app->event);
-	if (app->event.type == Expose) 
-	{
-		for (int i = 0; i < 10; i++)
-			draw_string(app, 10, i * 10, msg);
-	}
-	if (app->event.type == KeyPress)
-	{
-		KeySym key = XLookupKeysym(&app->event.xkey, 0);
-		if (key != 0) // I dont know why in tutorial used a NULL if KeySym is just unsigned long.
-    {
-      printf("Keyboard event.\n");
-    }
-  }
-	if (app->event.type == ButtonPressMask || app->event.type == PointerMotionMask)
+  int attrs[] = 
   {
-    printf("Mouse event.\n");
+    GLX_RGBA,
+    GLX_DEPTH_SIZE, 24,
+    GLX_DOUBLEBUFFER,
+    None
+  };
+
+  XVisualInfo *visual_info = glXChooseVisual(display, screen, attrs);
+  if (visual_info == NULL)
+  {
+    fprintf(stderr, "No apporpriate visual found");
+    exit(1);
   }
-}
 
-void close_app(App *app)
-{
-	XCloseDisplay(app->display);
-	free(app);
-}
+  printf("Visual %lu selected\n", visual_info->visualid);
 
-int main(void)
-{
-	//char *msg = "Hello, boomer!";
+  printf("Initializing XSetWindowAttributes.\n");
+  XSetWindowAttributes *set_window_attributes = malloc(sizeof(XSetWindowAttributes));
 
-	//App *app = create_app(WINDOW_WIDTH, WINDOW_HEIGHT);
+  set_window_attributes->colormap = XCreateColormap(display, DefaultRootWindow(display), visual_info->visual, AllocNone);
+
+  set_window_attributes->event_mask = ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | PointerMotionMask | ExposureMask | ClientMessage;
+
+  if (!windowed)
+  {
+    set_window_attributes->override_redirect = 1;
+    set_window_attributes->save_under = 1;
+  }
+
+  printf("Initializing XWindowAttributes.\n");
+  XWindowAttributes *window_attributes = malloc(sizeof(XWindowAttributes));
+  XGetWindowAttributes(display, DefaultRootWindow(display), window_attributes);
+
+  printf("Creating Window.\n");
+  Window window = XCreateWindow(display, DefaultRootWindow(display),
+                                 0, 0, 
+                                 window_attributes->width, window_attributes->height, 0,
+                                 visual_info->depth, InputOutput, visual_info->visual,
+                                 CWColormap | CWEventMask | CWOverrideRedirect | CWSaveUnder,
+                                 set_window_attributes);
+  
+  printf("Creating new screenshot.\n");
+  Screenshot *screenshot = screenshot_new(display, tracking_window);
+  printf("Done creating new screenshot.\n");
+
+  printf("Mapping Window.\n");
+  XMapWindow(display, window);
+
+  char *name = "boomer-arch";
+  char *class = "boomer-arch";
+
+  printf("Creating XClassHint and setting it.\n");
+  XClassHint hints = {.res_name = name, .res_class = class};
+
+  XStoreName(display, window, name);
+  XSetClassHint(display, window, &hints);
+
+  printf("Creating Atom delete_message.\n");
+  Atom delete_message = XInternAtom(display, "WM_DELETE_WINDOW", 0);
+
+  printf("Setting WM protocols.\n");
+  XSetWMProtocols(display, window, &delete_message, 1);
+
+  printf("Creating GLX Context.\n");
+  GLXContext context = glXCreateContext(display, visual_info, NULL, GL_TRUE);
+  glXMakeCurrent(display, window, context);
+
+  printf("Reading shader files.\n");
+  Shader *vertex_shader = shader_read("src/vert.glsl");
+  Shader *fragment_shader = shader_read("src/frag.glsl");
+  printf("Done reading shader files.\n");
+
+  printf("Content of vertex_shader:\n");
+  printf("%s\n", vertex_shader->content);
+
+  printf("Content of fragment_shader:\n");
+  printf("%s\n", fragment_shader->content);
+
+  printf("Creating new shader_program.\n");
+  GLuint shader_program = shader_new_program(vertex_shader, fragment_shader);
+  
+
+  int w = screenshot->image->width;
+  int h = screenshot->image->height;
+
+  printf("Creating vao, vbo, ebo.\n");
+  GLuint *vao = malloc(sizeof(GLuint)), *vbo = malloc(sizeof(GLuint)), *ebo = malloc(sizeof(GLuint));
+
+  printf("Creating vertices_foo.\n");
+  GLfloat vertices_foo[4][5] = 
+  {
+    {w, 0, 0.0, 1.0, 1.0},
+    {w, h, 0.0, 1.0, 0.0},
+    {0, h, 0.0, 0.0, 0.0},
+    {0, 0, 0.0, 0.0, 1.0}
+  };
+
+  printf("Creating indices.\n");
+  GLuint indices[6] = 
+  {
+    0, 1, 3,
+    1, 2, 3
+  };
+
+  printf("================ OpenGL ================\n");
+  printf("Gen vertex arrays.\n");
+  glGenVertexArrays(1, vao);
+  printf("Gen vbo buffers.\n");
+  glGenBuffers(1, vbo);
+  printf("Gen ebo buffers.\n");
+  glGenBuffers(1, ebo);
+
+  printf("Binding vao.\n");
+  glBindVertexArray(*vao);
+
+  printf("Binding array buffer vbo.\n");
+  glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+  printf("Binding buffer data vertices_foo.\n");
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_foo), vertices_foo, GL_STATIC_DRAW);
+
+  printf("Binding array buffer ebo.\n");
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo);
+  printf("Binding buffer data indices.\n");
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+  printf("Creating stride.\n");
+  GLsizei stride = (GLsizei)(5 * sizeof(GLfloat));
+
+  GLint aPos_location = glGetAttribLocation(shader_program, "aPos");
+  printf("aPos_location: %d\n", aPos_location);
+  GLint aTexCoord_location = glGetAttribLocation(shader_program, "aTexCoord");
+  printf("aTexCoord_location: %d\n", aTexCoord_location);
+
+  printf("Vertex attrib pointer (0).\n");
+  glVertexAttribPointer(aPos_location, 2, GL_FLOAT, false, stride, (pointer)(0));
+  printf("Enable vertex attrib pointer (0).\n");
+  glEnableVertexAttribArray(aPos_location);
+
+  printf("Vertex attrib pointer (1).\n");
+  glVertexAttribPointer(aTexCoord_location, 2, GL_FLOAT, false, stride, (pointer)(3 * sizeof(GLfloat)));
+  printf("Enable vertex attrib pointer (1).\n");
+  glEnableVertexAttribArray(aTexCoord_location);
+
+  GLuint texture = (GLuint)0;
+  
+  glGenTextures(1, &texture);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+               screenshot->image->width, screenshot->image->height, 
+               0, GL_BGRA, GL_UNSIGNED_BYTE, screenshot->image->data);
+
+  glGenerateMipmap(GL_TEXTURE_2D);
 
 
-	// Testing config loading and generating
-	printf("Generating default config\n");
+  glEnable(GL_TEXTURE_2D);
 
-	config_generate_default("config_1.txt");
-	
-	printf("Done generating default config:\n");
-	config_print(default_config, "config_1.txt");
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-	printf("Loading config...\n");
+  bool quitting = false;
 
-	config_t conf = config_load("config.txt");
+  printf("Creating camera.\n");
+  Camera *camera = calloc(1, sizeof(Camera));
+  camera->scale = 1.0;
+  printf("getting cursor position.\n");
+  vec2f pos = get_cursor_position(display);
 
-	config_print(conf, "config.txt");
+  Mouse *mouse = calloc(1, sizeof(Mouse));
+  mouse->curr = pos;
+  mouse->prev = pos;
+  Flashlight *flashlight = calloc(1, sizeof(Flashlight));
+  flashlight->is_enabled = false;
+  flashlight->radius = 200.0;
+  bool mirror = false;
+
+  float dt = 1.0 / rate;
+  Window origin_window;
+  int revert_to_return;
+  printf("XGetInputFocus.\n");
+  XGetInputFocus(display, &origin_window, &revert_to_return);
+  screenshot_save_to_ppm(*screenshot->image, "screenshot.ppm");
+
+  while (!quitting)
+  {
+    if (!windowed)
+    {
+      XSetInputFocus(display, window, RevertToParent, CurrentTime);
+    }
+
+    XWindowAttributes wa;
+    XGetWindowAttributes(display, window, &wa);
+    glViewport(0, 0, wa.width, wa.height);
+
+    XEvent event;
+    while (XPending(display) > 0)
+    {
+      printf("XPending(display) = %d\n", XPending(display));
+      printf("Next event.\n");
+      XNextEvent(display, &event);
+
+      printf("Switching type.\n");
+      switch(event.type)
+      {
+        case MotionNotify:
+          printf("case: MotionNotify.\n");
+          mouse->curr = vec2(event.xmotion.x, event.xmotion.y);
+
+          if (mouse->drag)
+          {
+            vec2f delta = vec2f_sub(world(*camera, mouse->prev), world(*camera, mouse->curr));
+            vec2f_add_assign(&camera->position, delta);
+
+            camera->velocity = vec2f_mul_scalar(delta, rate);
+          }
+
+          mouse->prev = mouse->curr;
+          break;
+        case ClientMessage:
+          printf("case: ClientMessage.\n");
+          if ((Atom)(event.xclient.data.l[0]) == delete_message)
+          {
+            quitting = true;
+          }
+          break;
+        case KeyPress:
+        {
+          printf("case: KeyPress.\n");
+          KeySym key = XLookupKeysym(&event.xkey, 0);
+          printf("Key is %lu\n", key);
+
+          switch (key)
+          {
+            case XK_equal: scroll_up(event, flashlight, camera, def_conf, *mouse); break;
+            case XK_minus: scroll_down(event, flashlight, camera, def_conf, *mouse); break;
+            case XK_0:
+              camera->scale = 1.0;
+              camera->delta_scale = 0.0;
+              camera->position = vec2(0.0, 0.0);
+              camera->velocity = vec2(0.0, 0.0);
+              mirror = false;
+              break;
+            case XK_q:
+            case XK_Escape:
+              quitting = true;
+              break;
+            // TODO: implement XK_r -- reloading shaders
+            // TODO: implement XK_m -- mirroring screenshot
+            case XK_f:
+              flashlight->is_enabled = !flashlight->is_enabled;
+              break;
+          }
+        }
+
+        case ButtonPress:
+          printf("case: ButtonPress.\n");
+          switch(event.xbutton.button)
+          {
+            case Button1:
+              mouse->prev = mouse->curr;
+              mouse->drag = true;
+              camera->velocity = vec2(0.0, 0.0);
+              break;
+            case Button4: scroll_up(event, flashlight, camera, def_conf, *mouse); break;
+            case Button5: scroll_down(event, flashlight, camera, def_conf, *mouse); break;
+          }
+          break;
+        case ButtonRelease:
+          printf("case: ButtonRelease.\n");
+          switch(event.xbutton.button)
+          {
+            case Button1:
+              mouse->drag = false;
+              break;
+          }
+          break;
+      }
+    }
+
+    printf("update camera.\n");
+    camera_update(camera, def_conf, dt, *mouse, vec2(wa.width, wa.height));
+    printf("update flashlight.\n");
+    flashlight_update(flashlight, dt);
+
+    printf("draw.\n");
+    draw(*screenshot->image, *camera, shader_program, *vao, texture, vec2(wa.width, wa.height), *mouse, *flashlight, mirror);
+
+    printf("swap buffers.\n");
+    glXSwapBuffers(display, window);
+    glFinish();
+
+    //while (true)
+    //{
+    //  printf("Screenshot refreshing.\n");
+    //  screenshot_refresh(screenshot, display, tracking_window);
+
+    //  int w = screenshot->image->width;
+    //  int h = screenshot->image->height;
+
+    //  GLfloat vertices[4][5] = 
+    //  {
+    //    {w, 0, 0.0, 1.0, 1.0},
+    //    {w, h, 0.0, 1.0, 0.0},
+    //    {0, h, 0.0, 0.0, 0.0},
+    //    {0, 0, 0.0, 0.0, 1.0}
+    //  };
+
+    //  GLuint indices[6] = 
+    //  {
+    //    0, 1, 3,
+    //    1, 2, 3
+    //  };
+
+    //  printf("Binding array buffer vbo.\n");
+    //  glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+    //  glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(sizeof(vertices)), vertices, GL_STATIC_DRAW);
+    //  glTexImage2D(GL_TEXTURE_2D, 
+    //               0, GL_RGB, 
+    //               screenshot->image->width, screenshot->image->height,
+    //               0, GL_RGBA, GL_UNSIGNED_BYTE, screenshot->image->data);
+    //}
+  }
 
 
+  printf("Freed allocated structures.\n");
+  XSetInputFocus(display, origin_window, RevertToParent, CurrentTime);
+  XSync(display, 0);
 
 
-	// Testing navigation
+  glDeleteVertexArrays(1, vao);
+  glDeleteBuffers(1, vbo);
+  glDeleteBuffers(1, ebo);
 
-	mouse_t mouse = 
-	{
-		.curr = vec2(10.06, 196.0),
-		.prev = vec2(10.05, 195.0),
-		.drag = false,
-	};
-
-	printf("Data of mouse structure:\n"
-			" curr = x: %.2f, y: %.2f\n"
-			" prev = x: %.2f, y: %.2f\n"
-			" drag = %s\n",
-			mouse.curr.x, mouse.curr.y, mouse.prev.x, mouse.prev.y, mouse.drag ? "true\n" : "false\n");
-
-	camera_t camera = 
-	{ 
-		.position = vec2(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0),
-		.velocity = vec2(105.0, 15.0),
-		.scale_pivot = vec2(100.0, 600.0),
-		.scale = 4.0,
-		.delta_scale = 1.5,
-	};
-
-	printf("Data of camera structure:\n"
-		" position    = x: %.2f, y: %.2f\n"
-		" velocity    = x: %.2f, y: %.2f\n"
-		" scale_pivot = x: %.2f, y: %.2f\n"
-		" scale       = %.2f\n"
-		" delta_scale = %.2f\n",
-		camera.position.x, camera.position.y,
-		camera.velocity.x, camera.velocity.y,
-		camera.scale_pivot.x, camera.scale_pivot.y,
-		camera.scale, camera.delta_scale);
-
-	printf("v = x: 256.0, y: 256.0\n");
-
-	vec2f wrld = world(camera, vec2(256.0, 256.0));
-
-	printf("world:\n"
-			" x: %.2f\n"
-			" y: %.2f\n", wrld.x, wrld.y);
-
-	printf("Updating camera...\n");
-
-
-	camera_update(&camera, conf, 0.9, mouse, vec2(WINDOW_WIDTH, WINDOW_HEIGHT));
-	printf("Data of updated camera structure:\n"
-		" position    = x: %.2f, y: %.2f\n"
-		" velocity    = x: %.2f, y: %.2f\n"
-		" scale_pivot = x: %.2f, y: %.2f\n"
-		" scale       = %.2f\n"
-		" delta_scale = %.2f\n",
-		camera.position.x, camera.position.y,
-		camera.velocity.x, camera.velocity.y,
-		camera.scale_pivot.x, camera.scale_pivot.y,
-		camera.scale, camera.delta_scale);
-
-	
-	//while (app->running == 1) 
-	//	handle_app_event(app, msg);
-		
-	//close_app(app);
-	return 0;
+  free(mouse);
+  free(camera);
+  free(flashlight);
+  screenshot_destroy(screenshot, display);
+  free(set_window_attributes);
+  free(visual_info);
+  free(window_attributes);
+  XCloseDisplay(display);
 }

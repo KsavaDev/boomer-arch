@@ -8,10 +8,11 @@ typedef struct
   char *content;
 } Shader;
 
-Shader shader_read(char *file);
-GLuint shader_new(Shader shader, GLenum kind);
-GLuint shader_new_program(Shader vert, Shader frag);
+Shader *shader_read(char *file);
+GLuint shader_new(Shader *shader, GLenum kind);
+GLuint shader_new_program(Shader *vert, Shader *frag);
 void shader_reload(Shader *shader);
+void shader_destroy(Shader *shader);
 
-#endif // !SHADER_H
+#endif // SHADER_H
 

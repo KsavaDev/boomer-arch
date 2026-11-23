@@ -3,7 +3,9 @@
 
 #include <stdbool.h>
 #include <X11/Xlib.h>
+#include <GL/gl.h>
 #include "la.h"
+#include "navigation.h"
 
 typedef struct
 {
@@ -13,13 +15,13 @@ typedef struct
   bool is_enabled;
 } Flashlight;
 
-// atp I cant precisely answer what I should use: const float or #define
-const float INITIAL_FL_DELTA_RADIUS      = 250.0;
-const float FL_DELTA_RADIUS_DECELERATION = 10.0;
+#define INITIAL_FL_DELTA_RADIUS      250.0
+#define FL_DELTA_RADIUS_DECELERATION 10.0
 
-void update(Flashlight *flashlight, float dt);
+void flashlight_update(Flashlight *flashlight, float dt);
 vec2f get_cursor_position(Display *display);
 Window select_window(Display *display);
 int X11_error_handler(Display *display, XErrorEvent *error_event);
+void draw(XImage screenshot, Camera camera, GLuint shader, GLuint vao, GLuint texture, vec2f window_size, Mouse mouse, Flashlight flashlight, bool mirror);
 
 #endif // BOOMER_ARCH_H

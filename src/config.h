@@ -7,13 +7,13 @@ typedef struct
 	float scroll_speed;
 	float drag_friction;
 	float scale_friction;
-} config_t;
+} Config;
 
 
-extern config_t default_config; 
+extern Config default_config; 
 
-config_t config_load(const char *filepath);
+Config config_load(const char *filepath);
 void config_generate_default(const char *filepath);
-void config_print(config_t conf, const char *filename);
+void config_print(Config conf, const char *filename);
 
 #endif // CONFIG_H

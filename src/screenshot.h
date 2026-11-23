@@ -61,7 +61,7 @@ enum
 #endif // MIT_SHM 
 typedef struct
 {
-  XImage image;
+  XImage *image;
 #ifdef MIT_SHM
   XShmSegmentInfo *shminfo;
 #endif // MIT_SHM

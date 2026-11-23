@@ -12,7 +12,7 @@ typedef struct
 	vec2f curr;
 	vec2f prev;
 	bool drag;
-} mouse_t;
+} Mouse;
 
 typedef struct
 {
@@ -21,10 +21,10 @@ typedef struct
 	vec2f scale_pivot;
 	float scale;
 	float delta_scale;
-} camera_t;
+} Camera;
 
-vec2f world(camera_t camera, vec2f v);
+vec2f world(Camera camera, vec2f v);
 // In original code here is the PXImage, but it dont even used in proc block. So I removed it.
-void camera_update(camera_t *camera, config_t config, float dt, mouse_t mouse, vec2f window_size);
+void camera_update(Camera *camera, Config config, float dt, Mouse mouse, vec2f window_size);
 
 #endif // NAVIGATION_H

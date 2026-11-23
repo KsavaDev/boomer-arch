@@ -1,0 +1,9 @@
+- [x] Change README.md
+- [ ] Move X11 code to backend/X11_backend.c
+- [ ] Move repo to KsavaDev/doomer
+- [ ] Make project windows system independent
+  - [ ] Figure out how to copy current screen on wayland
+    - [ ] Probably use for this org.freedesktop.Screenshot or wlr screencopy
+  - [ ] Figure out best abstraction for getting data from copied image
+    - [ ] Research format data that outputs from wayland
+    - [ ] What do they have in common between X11 and Wayland?

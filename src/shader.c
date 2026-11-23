@@ -6,22 +6,25 @@
 #include <string.h>
 #include <stdlib.h>
 
-Shader shader_read(char *file)
+Shader *shader_read(char *file)
 {
-  Shader result;
-  result.path = strcat("src/", file);
-  result.content = read_file(file);
+  printf("Allocating Shader.\n");
+  Shader *result = malloc(sizeof(Shader));
+  printf("Setting path.\n");
+  result->path = file;
+  printf("Setting content.\n");
+  result->content = read_file(file);
   return result;
 }
 
-GLuint shader_new(Shader shader, GLenum kind)
+GLuint shader_new(Shader *shader, GLenum kind)
 {
   GLuint result = glCreateShader(kind);
-  char *shader_array[] = { shader.content };
-  glShaderSource(result, 1, shader_array, NULL);
+  const GLchar *shader_array = shader->content;
+  glShaderSource(result, 1, &shader_array, NULL);
   glCompileShader(result);
   
-  GLuint success;
+  GLint success;
   char info_log[512];
 
   glGetShaderiv(result, GL_COMPILE_STATUS, &success);
@@ -29,7 +32,7 @@ GLuint shader_new(Shader shader, GLenum kind)
   {
     glGetShaderInfoLog(result, 512, NULL, info_log);
     printf("------------------------------\n");
-    printf("Error during shader compilation: %s. Log:\n", shader.path);
+    printf("Error during shader compilation: %s. Log:\n", shader->path);
     printf("%s\n", info_log);
     printf("------------------------------\n");
   }
@@ -37,7 +40,7 @@ GLuint shader_new(Shader shader, GLenum kind)
   return result;
 }
 
-GLuint shader_new_program(Shader vert, Shader frag)
+GLuint shader_new_program(Shader *vert, Shader *frag)
 {
   GLuint result = glCreateProgram();
 
@@ -52,7 +55,7 @@ GLuint shader_new_program(Shader vert, Shader frag)
   glDeleteShader(vertex_shader);
   glDeleteShader(fragment_shader);
 
-  GLuint success;
+  GLint success;
   char info_log[512];
 
   glGetProgramiv(result, GL_LINK_STATUS, &success);
@@ -65,6 +68,11 @@ GLuint shader_new_program(Shader vert, Shader frag)
   glUseProgram(result);
 
   return result;
+}
+
+void shader_destroy(Shader *shader)
+{
+  free(shader);
 }
 
 void shader_reload(Shader *shader)
