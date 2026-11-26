@@ -4,7 +4,6 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <stdio.h>
-// TODO: add MIT_SHM to application options
 #ifndef MIT_SHM
 
   #define MIT_SHM
@@ -65,11 +64,11 @@ typedef struct
 #ifdef MIT_SHM
   XShmSegmentInfo *shminfo;
 #endif // MIT_SHM
-} Screenshot;
+} X11_screenshot;
 
-Screenshot *screenshot_new(Display *display, Window window);
-void screenshot_destroy(Screenshot *screenshot, Display *display);
-void screenshot_refresh(Screenshot *screenshot, Display *display, Window window);
-void screenshot_save_to_ppm(XImage image, char *filepath);
+X11_screenshot *X11_screenshot_new(Display *display, Window window);
+void X11_screenshot_destroy(X11_screenshot *X11_screenshot, Display *display);
+void X11_screenshot_refresh(X11_screenshot *X11_screenshot, Display *display, Window window);
+void X11_screenshot_save_to_ppm(XImage image, char *filepath);
 
 #endif // SCREENSHOT_H

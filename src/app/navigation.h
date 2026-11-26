@@ -23,6 +23,19 @@ typedef struct
 	float delta_scale;
 } Camera;
 
+typedef struct
+{
+  float shadow;
+  float radius;
+  float delta_radius;
+  bool is_enabled;
+} Flashlight;
+
+#define INITIAL_FL_DELTA_RADIUS      250.0
+#define FL_DELTA_RADIUS_DECELERATION 10.0
+
+void flashlight_update(Flashlight *flashlight, float dt);
+
 vec2f world(Camera camera, vec2f v);
 // In original code here is the PXImage, but it dont even used in proc block. So I removed it.
 void camera_update(Camera *camera, Config config, float dt, Mouse mouse, vec2f window_size);

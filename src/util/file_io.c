@@ -9,6 +9,7 @@ char *read_file(char *filename)
   if (fp == NULL)
   {
     fprintf(stderr, "Failed to open file. Please check file name or path to file.\n");
+		fprintf(stderr, "Provided filename: %s\n", filename);
     exit(1);
   }
 

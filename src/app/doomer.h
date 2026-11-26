@@ -1,27 +1,12 @@
-#ifndef BOOMER_ARCH_H
-#define BOOMER_ARCH_H
+#ifndef DOOMER_H
+#define DOOMER_H
 
-#include <stdbool.h>
-#include <X11/Xlib.h>
-#include <GL/gl.h>
+// This is a main file (dommer/(.c, .h)) where it checks what Window System is installed on machine and by this information uses different method for scrabbing image from screen and providing it to application for zooming.
+
 #include "../util/la.h"
 #include "navigation.h"
 
-typedef struct
-{
-  float shadow;
-  float radius;
-  float delta_radius;
-  bool is_enabled;
-} Flashlight;
+void scroll_up(unsigned int state, long control_mask, Flashlight *flashlight, Camera *camera, Config config, Mouse mouse);
+void scroll_down(unsigned int state, long control_mask, Flashlight *flashlight, Camera *camera, Config config, Mouse mouse);
 
-#define INITIAL_FL_DELTA_RADIUS      250.0
-#define FL_DELTA_RADIUS_DECELERATION 10.0
-
-void flashlight_update(Flashlight *flashlight, float dt);
-vec2f get_cursor_position(Display *display);
-Window select_window(Display *display);
-int X11_error_handler(Display *display, XErrorEvent *error_event);
-void draw(XImage screenshot, Camera camera, GLuint shader, GLuint vao, GLuint texture, vec2f window_size, Mouse mouse, Flashlight flashlight, bool mirror);
-
-#endif // BOOMER_ARCH_H
+#endif // DOOMER_H

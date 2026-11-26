@@ -4,6 +4,23 @@
 #include <X11/Xlib.h>
 #include "math.h"
 
+const float FL_DELTA_RADIUS_DECELERATION_C = FL_DELTA_RADIUS_DECELERATION;
+
+void flashlight_update(Flashlight *flashlight, float dt)
+{
+  if (fabs(flashlight->delta_radius) > 1.0)
+  {
+    flashlight->radius = fmax(0.0, flashlight->radius + flashlight->delta_radius * dt);
+    flashlight->delta_radius -= flashlight->delta_radius * FL_DELTA_RADIUS_DECELERATION_C * dt;
+  }
+  if (flashlight->is_enabled)
+    flashlight->shadow = fmin(flashlight->shadow + 6.0 * dt, 0.8);
+  else 
+  {
+    flashlight->shadow = fmax(flashlight->shadow - 6.0 * dt, 0.0);
+  }
+}
+
 vec2f world(Camera camera, vec2f v)
 {
 	return vec2f_div_scalar(v, camera.scale);
